@@ -1,37 +1,45 @@
 //[X][Y]
 //CORE VERSION OF IZZI
-//PASTA VERSION - Now allowing for empty spaces. Some breakages, but much fewer!
+//BURRITO VERSION - Working towards release
 //1. Starting an empty list with two values in breaks the object if it's mid-line
 //2. Change the wrapper
 //3. Multiple sheets
 //4. Automatic drawers for the XML function
 //5. Work out how to get the side control in
 //6. Turn on/off xml encoding
+//7. Multiple files
 
 function doGet() {
 
-  //grab the Test spread by URL, get all sheets, and loop through adding to a totalvalue. This will need manual control eventually
-  var ss = SpreadsheetApp.openByUrl("https://docs.google.com/spreadsheets/d/1dK0mIKqR__Y4oHJOzxij8La97PvKvOwY-8utJV0aGqY/edit#gid=0");
+  //grab the current spreadsheet, find the sheets, prep the empty starting value
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheets = ss.getSheets();
   var sheetValue = "";
 
+  //Loop through the sheets
   for (var i = 0; i < sheets.length; i++){
-    var sheetName = sheets[i].getSheetName();
+    var sheet = sheets[i];
+    var sheetName = sheet.getSheetName();
 
     //If there's not an exclamation in the sheet name
     if (sheetName.indexOf('!') < 0)
     {
-      var range = sheets[i].getRange('A:BI').getValues();
-      sheetValue += convertSheet(range, sheets[i].getSheetName());
-    }
+      //Grab the sheet's values as a range
+      var range = sheet.getSheetValues(1, 1, sheet.getMaxRows(), sheet.getMaxColumns());
 
+      //Pass into the convert Sheet function
+      sheetValue += convertSheet(range, sheetName);
+
+      //Wrap this resulting information with a Collection title
+      sheetValue = wrapDataWithin(sheetName +"Collection",sheetValue);
+    }
   }
 
-  sheetValue = wrapDataWithin("ScenarioCollection",sheetValue);
-  var xmlStyle = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+  //Add the data header for the browser to read
+  var xmlHeader = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
-  //This returns the actual value. Can't send multiple files - Is pity.
-  return ContentService.createTextOutput(xmlStyle + sheetValue)
+  //Return the value to the content service
+  return ContentService.createTextOutput(xmlHeader + sheetValue)
   .setMimeType(ContentService.MimeType.XML)
   ;
 }
