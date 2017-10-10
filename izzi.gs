@@ -1,6 +1,7 @@
 //[X][Y]
 //CORE VERSION OF IZZI
 //BURRITO VERSION - Working towards release
+//0. Escape Illegal characters
 //1. Starting an empty list with two values in breaks the object if it's mid-line
 //2. Change the wrapper
 //3. Multiple sheets
@@ -8,22 +9,38 @@
 //5. Work out how to get the side control in
 //6. Turn on/off xml encoding
 //7. Multiple files
-//http://www.bizcoder.com/convert-xml-to-json-using-xslt
 
-//On opening the app
+//Add the Export Sidebar to the UI
 function onOpen() {
-  SpreadsheetApp.getUi()
+  SpreadsheetApp.getUi() 
       .createMenu('Custom Menu')
       .addItem('Open Export Sidebar', 'showSidebar')
       .addToUi();
 }
 
+//Sidebar function
 function showSidebar() {
   var html = HtmlService.createHtmlOutputFromFile('Sidebar')
       .setTitle('Export with izzi')
       .setWidth(300);
+  
   SpreadsheetApp.getUi()
       .showSidebar(html);
+}
+
+//This connects to the sidebar's Export button 
+function export(){
+  
+  var value = "<pre lang='xml'><div class='notranslate'>" +doGet().getContent() + "</div></pre>";
+  
+  // Display a modal dialog box with custom HtmlService content.
+  var htmlOutput = HtmlService
+
+     .createHtmlOutput(value)
+     .setWidth(500)
+     .setHeight(500);
+  
+  SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'izzi Export');
 }
 
 //Core function
@@ -49,12 +66,12 @@ function doGet() {
       sheetValue += convertSheet(range, sheetName);
 
       //Wrap this resulting information with a Collection title
-      sheetValue = wrapDataWithin(sheetName +"Collection",sheetValue);
+      sheetValue = wrapElement(sheetName +"Collection",sheetValue);
     }
   }
 
   //Add the data header for the browser to read
-  var xmlHeader = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+  var xmlHeader = "<?xml version='1.0' encoding='UTF-8'?>";
 
   //Return the value to the content service
   return ContentService.createTextOutput(xmlHeader + sheetValue)
@@ -117,7 +134,7 @@ function convertSheet(range, sheetName){
         dataRow += openParents(range,topRow,column,parentRow,"");
 
         //Then wrap the cell inside the element
-        dataRow += wrapDataWithin(element,cell);
+        dataRow += wrapElement(element,cell);
 
         //Determine parent closing tags
         dataRow += closeParents(range,topRow,column,parentRow,"",false);
@@ -152,61 +169,25 @@ function convertSheet(range, sheetName){
 
   }
 
-  totalValue = wrapDataWithin(sheetName, totalValue);
+  totalValue = wrapElement(sheetName, totalValue);
   return totalValue;
 }
 
-//WORK THE REST DOWN INTO
-
-//A function that determines if a cell isn't the final cell
-function isFinalCell(range, finalCol, column, row){
-
-  var isFinal = true;
-
-  //Search along this row from this point, if you find any with data in it, it can't be final
-  for(var currentCol = column; currentCol <= finalCol; currentCol++){
-    if (range[row][currentCol].length != 0)
-    {
-     isFinal = false;
-    }
-  }
-
-  //If you've got to the finalCol without finding a single value, this is indeed the final cell.
-  return isFinal;
-
-}
-
-//A recursive function that seeks out the next empty cell with a neighbour to close it up
-function closeLooseParents(range, topRow, column, row, parentRow, cell){
-
-  //If the next cell to the right is empty but has a cell to the next of it...
-  if (range[row][column].length == 0 && range[row][column+1].length != 0){
-
-    //...Wrap up it's parents
-    return cell += closeParents(range,topRow,column, parentRow, false);
-  }
-  else
-  {
-    //If not, move on to the next cell
-    column = column + 1;
-    return closeLooseParents(range, topRow, column, row, parentRow, cell);
-  }
-
-}
-
-
-//A recursive function to determine all the opening parent tags we will need for this particular row.
+//A recursive function to determine all the parent tags we will need to open for this particular row.
 function openParents(range,topRow,column,row,cell){
 
   //Grab the parent we're currently examining
   var parent = range[row][column];
 
-  //First, if the parent we're examining isn't empty...
-  if (parent != ""){
+  //If the parent we're examining isn't empty...
+  if (hasData(parent)){
 
-    //... And the cell to the left isn't the same, or is on the tag Row (so is a repeated value) open up a new parent tag
-    if ((range[row][column-1] != parent)|| (row == topRow)){
-      cell = wrapOpen(parent) + cell;
+    //And the cell to the left isn't the same (as it's part of th
+    //or is on the tag Row (so is a repeated value)
+    if ((range[row][column-1] != parent) || (row == topRow)){
+      
+      //... Open up a new parent tag
+      cell = openElement(parent) + cell;
     }
   }
 
@@ -214,14 +195,33 @@ function openParents(range,topRow,column,row,cell){
   if (row > 0){
     row = row-1;
     return openParents(range,topRow,column, row, cell);
-
-  //If we are, great, then just return the cell and end this madness
   }
+  //If we are, great, then just return the cell
   else
   {
     return cell;
   }
 }
+
+//A function to close all parents that might still be open
+function closeLooseParents(range, topRow, column, row, parentRow, cell){
+
+  //If this cell has data but the cell to the right is empty...
+  if ((hasData(range[row][column])) && !(hasData[row][column+1])){
+
+    //...Wrap up it's parents
+    return cell += closeParents(range,topRow,column, parentRow, false);
+  }
+  else
+  {
+    //If not, move on to the cell to right and call this function again.
+    column = column + 1;
+    return closeLooseParents(range, topRow, column, row, parentRow, cell);
+  }
+
+}
+
+
 
 //This will add every parent needed into the cell. It'll need the column of the current cell, a row to search up (starting with the topRow) and the cell contents.
 //isUnnatural closes are for premature closing at the end of a row, while natural are for all other situations
@@ -238,14 +238,14 @@ function closeParents(range, topRow, column, row, cell, isUnnatural){
     {
       //... And the cell to the left isn't the same, close that parent tag up
       if (range[row][column-1] == parent){
-        cell = cell + wrapClose(parent);
+        cell = cell + closeElement(parent);
       }
     }
     else
     {
       //... And the cell to the right isn't the same, or is on the tag Row (so is a repeated value) then close that parent tag up
       if ((range[row][column+1] != parent) || (row == topRow)){
-        cell = cell + wrapClose(parent);
+        cell = cell + closeElement(parent);
       }
     }
   }
@@ -261,6 +261,24 @@ function closeParents(range, topRow, column, row, cell, isUnnatural){
   }
 }
 
+//A function that determines if a cell is the final cell
+function isFinalCell(range, finalCol, column, row){
+
+  var isFinal = true;
+
+  //Search along the row given. If you find any with data in it, it can't be final
+  for(var currentCol = column; currentCol <= finalCol; currentCol++){
+    if (!hasData(range[row][currentCol]))
+    {
+     isFinal = false;
+    }
+  }
+
+  //If you've got to the finalCol without finding a single value, this is indeed the final cell.
+  return isFinal;
+}
+
+
 //For finding attribtues of opens. These sit to the left of the topRow (ID's can be handled with @)
 function wrapRowAndAttributes(range, titleCol, topRow, row, dataRow){
   var data = "";
@@ -272,46 +290,44 @@ function wrapRowAndAttributes(range, titleCol, topRow, row, dataRow){
     if (range[row][attribCol] != ""){
 
       //add it to the data var with the attribute format
-      data += formatAttrRow(range[topRow][attribCol],range[row][attribCol]);
+      data += applyRowWithAttribute(range[topRow][attribCol],range[row][attribCol]);
       }
     }
 
   //when you're at the end of the spread, return what you've put together
-  return wrapOpen(range[row][titleCol] + data) + dataRow + wrapClose(range[row][titleCol]);
+  return openElement(range[row][titleCol] + data) + dataRow + closeElement(range[row][titleCol]);
 
 }
 
-//basic wrapping function
-function wrapDataWithin (outer, inner){
-  open = wrapOpen(outer);
-  close = wrapClose(outer);
+//Wrap data in XML
+function wrapElement (outer, inner){
+  open = openElement(outer);
+  close = closeElement(outer);
 
   value = open + inner + close;
   return value;
 }
 
-//format attribute row
-function formatAttrRow(attr, value){
+//Apply an attribute (id='1')
+function applyRowWithAttribute(attr, value){
   return " " + attr + " = '" + value +"'";
 }
 
-//basic open xml - this can take ID's as @ symbols
-function wrapOpen(inner){
+//Open xml tag
+function openElement(inner){
 
   //If there's an @ in the text, sort that as an ID
   if (inner.indexOf('@') >= 0){
     var splitInner = inner.split('@',2);
     inner = splitInner[0];
-    inner += formatAttrRow("ID", splitInner[1]);
+    inner += applyRowWithAttribute("ID", splitInner[1]);
   }
 
-  var open = "<";
-  var close = ">";
-  return open + inner + close;
+  return "<" + inner + ">";
 }
 
-//basic close xml
-function wrapClose(inner){
+//Close xml tag
+function closeElement(inner){
 
   //If there's an @ in the text, remove it
   if (inner.indexOf('@') >= 0){
@@ -319,9 +335,7 @@ function wrapClose(inner){
     inner = inner[0];
   }
 
-  var open = "</";
-  var close = ">";
-  return open + inner + close + "\n";
+  return "</" + inner + ">" + "\n";
 }
 
 //Convert a column & row into location co-ords
@@ -329,12 +343,13 @@ function at(column, row){
  return convertColumn(column) + (row+1);
 }
 
-//Convert a column into it's original format
+//Recursively convert a column into it's original format
 function convertColumn(i) {
   return (i >= 26 ? convertColumn((i / 26 >> 0) - 1) : '') +
     'ABCDEFGHIJLKMNOPQRSTUVWXYZ'[i % 26 >> 0];
 }
 
+//Check if a cell has data
 function hasData(cell){
   return cell.length != 0;
 }
