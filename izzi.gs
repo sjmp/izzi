@@ -8,6 +8,7 @@
 //5. Work out how to get the side control in
 //6. Turn on/off xml encoding
 //7. Multiple files
+//http://www.bizcoder.com/convert-xml-to-json-using-xslt
 
 //On opening the app
 function onOpen() {
