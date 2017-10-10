@@ -9,6 +9,23 @@
 //6. Turn on/off xml encoding
 //7. Multiple files
 
+//On opening the app
+function onOpen() {
+  SpreadsheetApp.getUi()
+      .createMenu('Custom Menu')
+      .addItem('Open Export Sidebar', 'showSidebar')
+      .addToUi();
+}
+
+function showSidebar() {
+  var html = HtmlService.createHtmlOutputFromFile('Sidebar')
+      .setTitle('Export with izzi')
+      .setWidth(300);
+  SpreadsheetApp.getUi()
+      .showSidebar(html);
+}
+
+//Core function
 function doGet() {
 
   //grab the current spreadsheet, find the sheets, prep the empty starting value
@@ -135,10 +152,7 @@ function convertSheet(range, sheetName){
   }
 
   totalValue = wrapDataWithin(sheetName, totalValue);
-
   return totalValue;
-
-
 }
 
 //WORK THE REST DOWN INTO

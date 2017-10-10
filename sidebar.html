@@ -1,0 +1,55 @@
+<html>
+<body>
+  
+<img src="https://raw.githubusercontent.com/sjmp/izzi/master/izzi.jpg" alt="izzi" style="max-width:100%;">
+
+<p><em>Your pint-sized cms</em></p>
+<p>Export XML from a Google Sheets spreadsheet</p>
+
+
+<div class="group">
+  <h2>Add sheet to be exported</h2>
+  <div class="titles">
+    <div>Sheet</div>
+    <div>Origin</div>
+  </div>
+  <div>
+    <select name="sheets">
+      <option value="sheetA">SheetA</option>
+      <option value="sheetB">SheetB</option>
+      <option value="sheetC">SheetC</option>
+    </select>
+    <input type="text"></input>
+  </div>
+  <input class="cellSelect" type="button" value="Add"/>
+</div>
+
+<div class="group">
+  <h2>Sheets to be exported</h2>
+  <div class="titles">
+    <div>Sheet</div>
+    <div>Origin</div>
+    <div>Remove</div>
+  </div>
+  <ul>
+      <li>SheetD
+        <input type="text"></input>
+        <input class="cellSelect" type="button" value="X"/>
+      </li>
+      <li>SheetE
+        <input type="text"></input>
+        <input class="cellSelect" type="button" value="X"/>
+      </li>
+      <li>SheetF
+        <input type="text"></input>
+        <input class="cellSelect" type="button" value="X"/>
+      </li>
+  </ul>
+</div>
+
+<h2>Options</h2>
+
+<input type="button" value="Create sample spreadsheet" onclick="google.script.host.close()" />
+<input type="button" value="Preview Export" onclick="google.script.host.close()" />
+<input type="button" value="Export!" onclick="google.script.host.close()" />
+<input type="button" value="Close" onclick="google.script.host.close()" />
