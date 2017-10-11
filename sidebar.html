@@ -17,9 +17,7 @@
   <div class="inline form-group">
     <label for="sheetsSelect">Sheet</label>
     <select name="sheetsSelect" id="sheets">
-      <option value="sheetA">SheetA</option>
-      <option value="sheetB">SheetB</option>
-      <option value="sheetC">SheetC</option>
+
     </select>
   </div>
   <div class="inline form-group">
@@ -53,12 +51,17 @@
   </div>
 </div>
 
-<h2>Options</h2>
+<div id="test"></div>
 
 <input type="button" value="Create sample spreadsheet" onclick="google.script.host.close()" />
-<input type="button" value="Preview Export" onclick="google.script.host.close()" />
-<input type="button" value="Export!" onclick="google.script.host.close()" />
+<input type="button" value="Export!" onclick="google.script.run.export()" />
 <input type="button" value="Close" onclick="google.script.host.close()" />
 </div>
 </body>
 </html>
+
+<script type="text/javascript">
+
+
+
+</script>

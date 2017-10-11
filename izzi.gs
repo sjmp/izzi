@@ -51,7 +51,7 @@ function convertSheet(range, sheetName)
   var titleCol = 0;
   while(range[topRow][titleCol] != "XML")
   {
-    if (topRow < 100){
+    if (topRow < 1000){
       topRow++;
     }else{
       topRow = 0;
@@ -160,7 +160,7 @@ function openParents(range, topRow, column, row, cell)
   if (row > 0)
   {
     row = row-1;
-    return openParents(range,topRow,column, row, cell);
+    return openParents(range, topRow, column, row, cell);
   }
   
   //If we are at the top of the spreadsheet, it's time to stop and return the cell
@@ -382,3 +382,4 @@ function beautifyXml(xml)
         return c + "<br/>"
     });
 }
+
