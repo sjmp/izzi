@@ -377,6 +377,5 @@ function escapeXml(xml) {
 function beautifyXml(xml) {
     return xml.replace(/(&lt;)\/([a-zA-Z]+)(&gt;)/g, function (c) {
         return c + "<br/>"
-
     });
 }
