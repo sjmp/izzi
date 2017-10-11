@@ -10,45 +10,16 @@
 //6. Turn on/off xml encoding
 //7. Multiple files
 
-//Add the Export Sidebar to the UI
-function onOpen() {
-  SpreadsheetApp.getUi() 
-      .createMenu('Custom Menu')
-      .addItem('Open Export Sidebar', 'showSidebar')
-      .addToUi();
-}
+//izzi code -------------------------------------------------------
 
-//Sidebar function
-function showSidebar() {
-  var html = HtmlService.createHtmlOutputFromFile('Sidebar')
-      .setTitle('Export with izzi')
-      .setWidth(300);
-  
-  SpreadsheetApp.getUi()
-      .showSidebar(html);
-}
-
-//This connects to the sidebar's Export button 
-function export(){
-  
-  var value = "<pre lang='xml'><div class='notranslate'>" +doGet().getContent() + "</div></pre>";
-  
-  // Display a modal dialog box with custom HtmlService content.
-  var htmlOutput = HtmlService
-
-     .createHtmlOutput(value)
-     .setWidth(500)
-     .setHeight(500);
-  
-  SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'izzi Export');
-}
-
-//Core function
+//Entry point
 function doGet() {
 
   //grab the current spreadsheet, find the sheets, prep the empty starting value
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheets = ss.getSheets();
+  var sheets = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheets();
+
   var sheetValue = "";
 
   //Loop through the sheets
@@ -56,7 +27,7 @@ function doGet() {
     var sheet = sheets[i];
     var sheetName = sheet.getSheetName();
 
-    //If there's not an exclamation in the sheet name
+    //If there's not an exclamation in the sheet name: TODO replace with user input
     if (sheetName.indexOf('!') < 0)
     {
       //Grab the sheet's values as a range
@@ -66,7 +37,7 @@ function doGet() {
       sheetValue += convertSheet(range, sheetName);
 
       //Wrap this resulting information with a Collection title
-      sheetValue = wrapElement(sheetName +"Collection",sheetValue);
+      sheetValue = wrapElement(sheetName +"Collection", sheetValue);
     }
   }
 
@@ -85,7 +56,7 @@ function convertSheet(range, sheetName){
   //The total value to be delivered at the end
   var totalValue = "";
 
-  //Find where our 'tag' is - Where the top row & the item title column meets. (TODO: Make this user input)
+  //Find where our 'tag' is - Where the top row & the item title column meets. (TODO: Make this optional user input)
   var topRow = 0;
   var titleCol = 0;
   while(range[topRow][titleCol] != "XML"){
@@ -124,41 +95,41 @@ function convertSheet(range, sheetName){
 
       //constants for the wrapping and adding of cell data for ease of reading/debugging
       var cell = range[row][column];
-      var element = range[topRow][column];
+      var baseParent = range[topRow][column];
       var parentRow = topRow-1;
 
-      //If the cell has some value in it
+      //If the cell has some data in it
       if (hasData(cell))
       {
-        //Determine parent opening tags
-        dataRow += openParents(range,topRow,column,parentRow,"");
+        //Open up it's parents
+        dataRow += openParents(range, topRow, column, parentRow, "");
 
-        //Then wrap the cell inside the element
-        dataRow += wrapElement(element,cell);
+        //Wrap the cell inside the base parent
+        dataRow += wrapElement(baseParent, cell);
 
-        //Determine parent closing tags
-        dataRow += closeParents(range,topRow,column,parentRow,"",false);
+        //Now close it's parents naturally
+        dataRow += closeParents(range, topRow, column, parentRow, "", false);
 
-        //No longer skip empty rows
+        //As we've found some data in this row, we'll want the lock to be switched off.
         skipEmptyRows = false;
       }
       else
       {
-        //If the lock is off...
+        //If we aren't skipping empty rows
         if (skipEmptyRows == false)
         {
-          //If this is the final cell in the row, force close the parents
+          //If this is the final cell in the row, we'll just want to close it's parents forcefully
           if (isFinalCell(range, finalCol, column, row))
           {
-            dataRow += closeParents(range,topRow,column,parentRow,"",true);
+            dataRow += closeParents(range, topRow, column, parentRow, "", true);
           }
           else
           {
-            //Determine closing parents of that cell naturally
-            dataRow += closeLooseParents(range, topRow, column, row, parentRow,"");
+            //If it's not the final cell, we'll need to close up any loose parents before we go onto the next cell.
+            dataRow += closeLooseParents(range, topRow, column, row, parentRow, "");
           }
 
-          //Now turn back on the lock
+          //Now we'll want to start skipping empty
           skipEmptyRows = true;
         }
       }
@@ -174,7 +145,7 @@ function convertSheet(range, sheetName){
 }
 
 //A recursive function to determine all the parent tags we will need to open for this particular row.
-function openParents(range,topRow,column,row,cell){
+function openParents(range, topRow, column, row, cell){
 
   //Grab the parent we're currently examining
   var parent = range[row][column];
@@ -182,21 +153,21 @@ function openParents(range,topRow,column,row,cell){
   //If the parent we're examining isn't empty...
   if (hasData(parent)){
 
-    //And the cell to the left isn't the same (as it's part of th
-    //or is on the tag Row (so is a repeated value)
+    //And the cell to the left isn't the same (indicating a new parent)
+    //or the cell is on the topRow (indicating it's a bottom-level parent)
     if ((range[row][column-1] != parent) || (row == topRow)){
-      
-      //... Open up a new parent tag
+
+      //Append the cell with a a new parent tag
       cell = openElement(parent) + cell;
     }
   }
 
-  //If we're not at the top of the spreadsheet, then move up a row and call this function again
+  //If we're not at the top of the spreadsheet, move up a row and call this function again
   if (row > 0){
     row = row-1;
     return openParents(range,topRow,column, row, cell);
   }
-  //If we are, great, then just return the cell
+  //If we are, it's time to stop - return the cell
   else
   {
     return cell;
@@ -206,24 +177,22 @@ function openParents(range,topRow,column,row,cell){
 //A function to close all parents that might still be open
 function closeLooseParents(range, topRow, column, row, parentRow, cell){
 
-  //If this cell has data but the cell to the right is empty...
-  if ((hasData(range[row][column])) && !(hasData[row][column+1])){
-
-    //...Wrap up it's parents
+  //If this cell isn't empty, and the cell to the right is empty
+ if (!(hasData(range[row][column])) && (hasData(range[row][column+1])))
+ {
+    //Time to close up the parents.
     return cell += closeParents(range,topRow,column, parentRow, false);
   }
   else
   {
-    //If not, move on to the cell to right and call this function again.
+    //Move on to the cell to right and call this function again.
     column = column + 1;
     return closeLooseParents(range, topRow, column, row, parentRow, cell);
   }
 
 }
 
-
-
-//This will add every parent needed into the cell. It'll need the column of the current cell, a row to search up (starting with the topRow) and the cell contents.
+//This will close up any parents for the cell. It'll need the column of the current cell, a row to search up (starting with the topRow) and the cell contents.
 //isUnnatural closes are for premature closing at the end of a row, while natural are for all other situations
 function closeParents(range, topRow, column, row, cell, isUnnatural){
 
@@ -231,7 +200,7 @@ function closeParents(range, topRow, column, row, cell, isUnnatural){
   var parent = range[row][column];
 
   //First, if the parent we're examining isn't empty...
-  if (parent != ""){
+  if (hasData(parent)){
 
     //if the force is on...
     if (isUnnatural)
@@ -268,7 +237,7 @@ function isFinalCell(range, finalCol, column, row){
 
   //Search along the row given. If you find any with data in it, it can't be final
   for(var currentCol = column; currentCol <= finalCol; currentCol++){
-    if (!hasData(range[row][currentCol]))
+    if (hasData(range[row][currentCol]))
     {
      isFinal = false;
     }
@@ -351,5 +320,63 @@ function convertColumn(i) {
 
 //Check if a cell has data
 function hasData(cell){
+  if (cell == null) return 0;
   return cell.length != 0;
+}
+
+//Google Sheets specific code -------------------------------------------------------
+
+//Add the Export Sidebar to the UI
+function onOpen() {
+  SpreadsheetApp.getUi()
+      .createMenu('Custom Menu')
+      .addItem('Open Export Sidebar', 'showSidebar')
+      .addToUi();
+}
+
+//Sidebar function
+function showSidebar() {
+  var html = HtmlService.createHtmlOutputFromFile('Sidebar')
+      .setTitle('Export with izzi')
+      .setWidth(300);
+
+  SpreadsheetApp.getUi()
+      .showSidebar(html);
+}
+
+//This connects to the sidebar's Export button
+function export(){
+
+  var value = beautifyXml(escapeXml(doGet().getContent()));
+
+  // Display a modal dialog box with custom HtmlService content.
+  var htmlOutput = HtmlService
+
+     .createHtmlOutput(value)
+     .setWidth(500)
+     .setHeight(500);
+
+  SpreadsheetApp.getUi()
+    .showModalDialog(htmlOutput, 'izzi Export');
+}
+
+//Escape xml - A StackOverflow solution!
+function escapeXml(xml) {
+    return xml.replace(/[<>&'"]/g, function (c) {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+        }
+    });
+}
+
+//Beautify
+function beautifyXml(xml) {
+    return xml.replace(/(&lt;)\/([a-zA-Z]+)(&gt;)/g, function (c) {
+        return c + "<br/>"
+
+    });
 }
