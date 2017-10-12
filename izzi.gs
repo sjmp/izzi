@@ -5,13 +5,18 @@
 //Entry point
 function doGet() 
 {
+  return convertSheets(true, "");
+}
+
+function convertSheets(doGet, name)
+{ 
   //Grab the current spreadsheet, find the sheets, prep the empty starting value
   var sheets = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheets();
 
   var sheetValue = "";
-
+  
   //Loop through each sheet
   for (var i = 0; i < sheets.length; i++)
   {
@@ -19,7 +24,7 @@ function doGet()
     var sheetName = sheet.getSheetName();
 
     //If there's not an exclamation in the sheet name
-    if (sheetName.indexOf('!') < 0)
+    if ((((sheetName.indexOf('!') < 0) && doGet))||((sheetName == name) && !(doGet)))
     {
       //Grab the sheet's values as a range
       var range = sheet.getSheetValues(1, 1, sheet.getMaxRows(), sheet.getMaxColumns());
@@ -51,7 +56,7 @@ function convertSheet(range, sheetName)
   var titleCol = 0;
   while(range[topRow][titleCol] != "XML")
   {
-    if (topRow < 1000){
+    if (topRow < 998){
       topRow++;
     }else{
       topRow = 0;
@@ -346,9 +351,11 @@ function showSidebar()
 }
 
 //This connects to the sidebar's Export button
-function export()
-{
-  var value = beautifyXml(escapeXml(doGet().getContent()));
+function export(sheetName)
+{ 
+  Logger.log(sheetName);
+  
+  var value = beautifyXml(escapeXml(convertSheets(false, sheetName).getContent()));
 
   // Display a modal dialog box with custom HtmlService content.
   var htmlOutput = HtmlService
@@ -383,3 +390,19 @@ function beautifyXml(xml)
     });
 }
 
+//Return the sheet names
+function getNames(){
+  var sheets = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheets();
+  
+  var sheetNames = new Array();
+  
+  for(var i=0; i < sheets.length; i++)
+  {
+    sheetNames.push(sheets[i].getName());
+  }
+  
+  return sheetNames;
+
+}

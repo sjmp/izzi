@@ -1,67 +1,79 @@
 <!DOCTYPE html>
 <html>
 <head>
+<base target="_top">
   <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
-</head>
+  <style>
+    label 
+    {
+       font-weight: bold;
+    }
+    em
+    {
+       margin: 0 auto;
+       display: table;
+    }
+    select, .button
+    {
+       width: 275px;
+    }
+    .group
+    {
+       border-top: solid #F8DE16 4px;
+       margin-top: 10px;
+       padding-top: 10px;
+    }
+    
+  </style>
+  </head>
 <body>
 
 <img src="https://raw.githubusercontent.com/sjmp/izzi/master/izzi.jpg" alt="izzi" style="max-width:100%;">
 
 <div class="sidebar">
-<em>Your pint-sized cms</em>
-<p>Export XML from a Google Sheets spreadsheet</p>
-
-
+<em>A pint-sized CMS</em>
 <div class="group">
-  <h2>Add sheet to be exported</h2>
   <div class="inline form-group">
-    <label for="sheetsSelect">Sheet</label>
+    <label for="sheetsSelect">Sheet to be exported</label>
     <select name="sheetsSelect" id="sheets">
 
     </select>
-  </div>
-  <div class="inline form-group">
-    <label for="originCellSelect">Origin</label>
-    <input type="text" id="originCellSelect" class="cellSelect"></input>
-  </div>
-  <input type="button" value="Add" onclick="google.script.host.close()" />
-</div>
-
-<div class="group">
-  <h2>Sheets to be exported</h2>
-  <div class="inline form-group">
-    <label for="sheetsCurrent">Cell</label>
-    <ul id = "sheetsCurrent">
-      <li>SheetA</li>
-    </ul>
-  </div>
-
-  <div class="inline form-group">
-    <label for="originCellCurrent">Origin</label>
-    <ul id = "originCellCurrent">
-      <li>[ ]</li>
-    </ul>
-  </div>
-
-  <div class="inline form-group">
-    <label for="removeCurrent">Delete</label>
-      <ul id = "removeCurrent">
-        <li>X</li>
-      </ul>
-  </div>
 </div>
 
 <div id="test"></div>
 
-<input type="button" value="Create sample spreadsheet" onclick="google.script.host.close()" />
-<input type="button" value="Export!" onclick="google.script.run.export()" />
-<input type="button" value="Close" onclick="google.script.host.close()" />
+<br/>
+<input class="button" type="button" value="Export!" onclick="handleSelectChoice()"/>
+<br/>
+<input class="button" type="button" value="Close" onclick="google.script.host.close()"/>
 </div>
 </body>
 </html>
 
 <script type="text/javascript">
 
-
-
+  
+  google.script.run.withSuccessHandler(createOptions).getNames();
+  
+  function createOptions(data)
+  {
+     var options = "";
+     for(var i=0; i < data.length; i++)
+     {
+        options = options + "<option value=" + data[i] +">" + data[i] + "</options>";
+     }
+     document.getElementById("sheets").innerHTML=options;
+  }
+  
+  function handleSelectChoice()
+  {
+     var data = document.getElementById('sheets').value;
+     google.script.run.export(data);
+   
+  }
+  
 </script>
+
+
+
+
