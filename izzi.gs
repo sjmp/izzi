@@ -1,5 +1,11 @@
 //HELLS VERSION - Basic release
 
+//TODO 
+//1 - XSLT styling for JSON 
+//2 - Escape for not having the XML tag  
+//3 - Sample spreadsheet
+//4 - Installation guide
+
 //izzi code -------------------------------------------------------
 
 //Entry point
