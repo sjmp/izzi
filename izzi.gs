@@ -12,6 +12,7 @@
 function doGet() 
 {
   return convertSheets(true, "");
+//  return convertSheets(false, "Nodes");
 }
 
 function convertSheets(doGet, name)
@@ -62,7 +63,7 @@ function convertSheet(range, sheetName)
   var titleCol = 0;
   while(range[topRow][titleCol] != "XML")
   {
-    if (topRow < 998){
+    if (topRow < 200){
       topRow++;
     }else{
       topRow = 0;
